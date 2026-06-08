@@ -1,0 +1,29 @@
+[project]
+name = "reviewagent"
+version = "0.7.0"
+description = "Agent-native software review platform"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "httpx",
+    "jinja2",
+    "mcp",
+    "networkx",
+    "pydantic",
+    "PyJWT",
+    "pyyaml",
+    "radon",
+    "ruff",
+    "uvicorn",
+]
+
+[project.scripts]
+review = "reviewagent.cli.main:main"
+reviewagent = "reviewagent.cli.main:main"
+reviewagent-mcp = "reviewagent.mcp_server.server:main"
+reviewagent-github-app = "reviewagent.integrations.github.app:main"
+reviewagent-dashboard = "reviewagent.dashboard.app:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

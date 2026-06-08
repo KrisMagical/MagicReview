@@ -1,0 +1,13 @@
+diff --git a/examples/bad_code.py b/examples/bad_code.py
+index 1111111..2222222 100644
+--- a/examples/bad_code.py
++++ b/examples/bad_code.py
+@@ -0,0 +1,8 @@
++def risky(data, items, count, user_path, cursor):
++    user = data.get("user")
++    name = user.name
++    first = items[0]
++    token = data["token"]
++    ratio = 100 / count
++    handle = open(user_path)
++    return handle.read(), first, token, ratio

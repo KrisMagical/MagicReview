@@ -1,0 +1,70 @@
+body {
+  color: #1f2937;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f8fafc;
+}
+
+header {
+  background: #111827;
+  color: white;
+  padding: 16px 28px;
+}
+
+header h1 {
+  margin: 0 0 8px;
+}
+
+nav a {
+  color: #bfdbfe;
+  margin-right: 16px;
+}
+
+main {
+  padding: 28px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.metrics div {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.metrics strong {
+  display: block;
+  font-size: 28px;
+}
+
+.metrics span {
+  color: #6b7280;
+}
+
+table {
+  background: white;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+th, td {
+  border: 1px solid #e5e7eb;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  background: #f3f4f6;
+}
+
+code {
+  background: #f3f4f6;
+  padding: 2px 4px;
+}

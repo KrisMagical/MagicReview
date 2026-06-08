@@ -1,0 +1,46 @@
+rules:
+  max_function_length:
+    enabled: true
+    max_lines: 5
+    severity: medium
+  max_parameters:
+    enabled: true
+    max_params: 3
+    severity: medium
+  no_select_star:
+    enabled: true
+    severity: high
+  no_controller_repository:
+    enabled: true
+    controller_patterns:
+      - "api/"
+      - "routers/"
+    repository_patterns:
+      - "repositories/"
+      - "db"
+    severity: high
+  service_log_required:
+    enabled: true
+    service_patterns:
+      - "services/"
+    logger_names:
+      - "logger"
+      - "log"
+    severity: low
+  forbidden_imports:
+    enabled: true
+    imports:
+      - "os.system"
+      - "subprocess.Popen"
+    severity: high
+  layer_rules:
+    enabled: true
+    severity: high
+    rules:
+      - from: "api"
+        cannot_import:
+          - "repositories"
+          - "db"
+      - from: "services"
+        cannot_import:
+          - "api"

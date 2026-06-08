@@ -1,0 +1,1 @@
+"""Architecture review sample app."""

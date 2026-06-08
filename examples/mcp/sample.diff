@@ -1,0 +1,9 @@
+diff --git a/examples/mcp/sample_file.py b/examples/mcp/sample_file.py
+index 1111111..2222222 100644
+--- a/examples/mcp/sample_file.py
++++ b/examples/mcp/sample_file.py
+@@ -0,0 +1,4 @@
++def load_user(data, cursor):
++    user = data.get("user")
++    cursor.execute(f"SELECT * FROM users WHERE name = {user.name}")
++    return user.name
