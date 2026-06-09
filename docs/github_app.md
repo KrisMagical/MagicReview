@@ -45,6 +45,7 @@ REVIEWAGENT_GITHUB_CONFIG_PATH=
 REVIEWAGENT_GITHUB_MAX_INLINE_COMMENTS=30
 REVIEWAGENT_GITHUB_FAIL_ON=high
 REVIEWAGENT_GITHUB_SAVE_RESULTS=true
+REVIEWAGENT_GITHUB_REVIEW_MODE=diff_only
 
 REVIEWAGENT_GITHUB_HOST=0.0.0.0
 REVIEWAGENT_GITHUB_PORT=8000
@@ -121,6 +122,22 @@ ReviewAgent can create a simple `ReviewAgent` check run when `REVIEWAGENT_GITHUB
 ## Dashboard Persistence
 
 When `REVIEWAGENT_GITHUB_SAVE_RESULTS=true`, PR review results are saved to the Dashboard SQLite database. ReviewAgent stores issue summaries and sanitized metadata such as action, sender, author, base sha, and head sha. It does not store tokens, private keys, or full diff text.
+
+## Review Mode
+
+Default:
+
+```bash
+REVIEWAGENT_GITHUB_REVIEW_MODE=diff_only
+```
+
+Optional:
+
+```bash
+REVIEWAGENT_GITHUB_REVIEW_MODE=full_project
+```
+
+`full_project` builds a temporary project from changed Python files returned by the GitHub PR files API and runs project review on that temporary directory. It does not execute code and removes the temporary directory after review.
 
 ## Security
 

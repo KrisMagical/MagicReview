@@ -24,6 +24,7 @@ class GitHubAppConfig:
     enable_agents: bool = False
     enable_llm: bool = False
     save_results: bool = False
+    review_mode: str = "diff_only"
     config_path: str | None = None
     max_inline_comments: int = 30
     fail_on: str | None = None
@@ -42,6 +43,7 @@ class GitHubAppConfig:
             enable_agents=_bool_env("REVIEWAGENT_GITHUB_ENABLE_AGENTS", False),
             enable_llm=_bool_env("REVIEWAGENT_GITHUB_ENABLE_LLM", False),
             save_results=_bool_env("REVIEWAGENT_GITHUB_SAVE_RESULTS", False),
+            review_mode=os.getenv("REVIEWAGENT_GITHUB_REVIEW_MODE", "diff_only"),
             config_path=os.getenv("REVIEWAGENT_GITHUB_CONFIG_PATH") or None,
             max_inline_comments=int(os.getenv("REVIEWAGENT_GITHUB_MAX_INLINE_COMMENTS", "30")),
             fail_on=os.getenv("REVIEWAGENT_GITHUB_FAIL_ON") or None,

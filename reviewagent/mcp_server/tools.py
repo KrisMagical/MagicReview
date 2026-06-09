@@ -37,6 +37,7 @@ def review_project(
     enable_enterprise_rules: bool = True,
     enable_agents: bool = False,
     agents: list[str] | None = None,
+    network_policy: dict[str, Any] | None = None,
 ) -> ReviewResult:
     """Review a project directory."""
 
@@ -51,6 +52,7 @@ def review_project(
             enable_enterprise_rules=enable_enterprise_rules,
             enable_agents=enable_agents,
             agents=agents,
+            network_policy=network_policy,
         )  # type: ignore[return-value]
     except TypeError:
         return _service.review_project(path)  # type: ignore[return-value]

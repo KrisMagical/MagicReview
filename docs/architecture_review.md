@@ -75,3 +75,12 @@ Architecture review returns the same Issue JSON shape:
 - Invalid LLM output is converted into `ArchitectureReviewError`.
 - Enterprise rule configuration belongs to Phase 5.5.
 - Multi-agent collaboration belongs to Phase 6.
+## Network Policy
+
+ReviewAgent remains offline by default. `--llm` enables the architecture review stage, but real network providers such as OpenAI or Anthropic also require explicit network authorization:
+
+```bash
+review project . --llm --llm-provider openai --allow-network --allow-llm --code-sharing summary-only
+```
+
+The mock provider does not require network authorization.

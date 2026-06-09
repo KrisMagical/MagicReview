@@ -8,6 +8,9 @@ from app.llm.provider import LLMProvider
 
 
 class MockLLMProvider(LLMProvider):
+    name = "mock"
+    requires_network = False
+
     def __init__(self, response: str | None = None) -> None:
         self.calls: list[str] = []
         self.response = response or json.dumps(
@@ -25,6 +28,6 @@ class MockLLMProvider(LLMProvider):
             }
         )
 
-    def complete(self, prompt: str) -> str:
+    def complete(self, prompt: str, policy=None) -> str:
         self.calls.append(prompt)
         return self.response

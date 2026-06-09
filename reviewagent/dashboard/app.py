@@ -127,6 +127,19 @@ def api_team_stats() -> dict[str, Any]:
     return stats_service().team_stats()
 
 
+@app.get("/api/audit/network")
+def api_network_audit(limit: int = 100, offset: int = 0) -> list[dict[str, Any]]:
+    return repository().list_network_audit(limit=limit, offset=offset)
+
+
+@app.get("/api/audit/network/{audit_id}")
+def api_network_audit_detail(audit_id: int) -> dict[str, Any]:
+    record = repository().get_network_audit(audit_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Network audit record not found.")
+    return record
+
+
 @app.get("/", response_class=HTMLResponse)
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard_index(request: Request) -> Any:
@@ -162,6 +175,14 @@ def dashboard_review_detail(request: Request, review_run_id: int) -> Any:
     if templates is None:
         return HTMLResponse(f"<h1>Review #{review['id']}</h1>")
     return templates.TemplateResponse("review_detail.html", {"request": request, "review": review, "issues": repo.get_review_issues(review_run_id)})
+
+
+@app.get("/audit/network", response_class=HTMLResponse)
+def dashboard_network_audit(request: Request) -> Any:
+    records = repository().list_network_audit(limit=200)
+    if templates is None:
+        return HTMLResponse("<h1>Network Audit</h1>")
+    return templates.TemplateResponse("network_audit.html", {"request": request, "records": records})
 
 
 def main() -> None:

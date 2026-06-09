@@ -87,3 +87,4 @@ python -m reviewagent.dashboard.app
 - [Multi-Agent Review](docs/multi_agent.md)
 - [GitHub App](docs/github_app.md)
 - [Dashboard](docs/dashboard.md)
+- [Connected Services](docs/connected_services.md)

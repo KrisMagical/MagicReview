@@ -165,6 +165,42 @@ class ReviewRepository:
             ).fetchall()
             return [_row(row) for row in rows]
 
+    def insert_network_audit(self, data: dict[str, Any]) -> int:
+        with connect(self.db_path) as connection:
+            cursor = connection.execute(
+                """
+                INSERT INTO network_audit_records(
+                    source, provider, operation, code_sharing_mode, project_name, target_ref, status, error_type, metadata_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    data["source"],
+                    data["provider"],
+                    data["operation"],
+                    data["code_sharing_mode"],
+                    data.get("project_name"),
+                    data.get("target_ref"),
+                    data["status"],
+                    data.get("error_type"),
+                    json.dumps(data.get("metadata", {}), ensure_ascii=False),
+                ),
+            )
+            return int(cursor.lastrowid)
+
+    def list_network_audit(self, *, limit: int = 100, offset: int = 0) -> list[dict[str, Any]]:
+        with connect(self.db_path) as connection:
+            rows = connection.execute(
+                "SELECT * FROM network_audit_records ORDER BY timestamp DESC, id DESC LIMIT ? OFFSET ?",
+                (limit, offset),
+            ).fetchall()
+            return [_with_metadata(row) for row in rows]
+
+    def get_network_audit(self, audit_id: int) -> dict[str, Any] | None:
+        with connect(self.db_path) as connection:
+            row = connection.execute("SELECT * FROM network_audit_records WHERE id = ?", (audit_id,)).fetchone()
+            return _with_metadata(row) if row else None
+
 
 class ReviewPersistenceService:
     def __init__(self, db_path: str | Path | None = None) -> None:
@@ -231,10 +267,43 @@ class ReviewPersistenceService:
         reviews = self.repository.list_reviews(project_id=project_id, limit=1000)
         return {"project": project, "review_count": len(reviews), "total_issues": sum(review["total_issues"] for review in reviews)}
 
+    def save_network_audit(
+        self,
+        *,
+        source: str,
+        provider: str,
+        operation: str,
+        code_sharing_mode: str,
+        status: str,
+        project_name: str | None = None,
+        target_ref: str | None = None,
+        error_type: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> int:
+        sanitized = self._sanitize_metadata(metadata or {})
+        return self.repository.insert_network_audit(
+            {
+                "source": source,
+                "provider": provider,
+                "operation": operation,
+                "code_sharing_mode": code_sharing_mode,
+                "project_name": project_name,
+                "target_ref": target_ref,
+                "status": status,
+                "error_type": error_type,
+                "metadata": sanitized,
+            }
+        )
+
     @staticmethod
     def fingerprint(issue: dict[str, Any]) -> str:
         payload = "|".join(str(issue.get(key, "")) for key in ("type", "file", "line", "message"))
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _sanitize_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+        blocked = {"api_key", "token", "private_key", "prompt", "authorization", "secret"}
+        return {key: value for key, value in metadata.items() if key.lower() not in blocked}
 
 
 def _row(row: Any) -> dict[str, Any]:

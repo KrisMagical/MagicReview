@@ -91,5 +91,19 @@ def init_db(db_path: str | Path | None = None) -> None:
                 FOREIGN KEY(project_id) REFERENCES projects(id),
                 FOREIGN KEY(last_review_run_id) REFERENCES review_runs(id)
             );
+
+            CREATE TABLE IF NOT EXISTS network_audit_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                source TEXT NOT NULL,
+                provider TEXT NOT NULL,
+                operation TEXT NOT NULL,
+                code_sharing_mode TEXT NOT NULL,
+                project_name TEXT,
+                target_ref TEXT,
+                status TEXT NOT NULL,
+                error_type TEXT,
+                metadata_json TEXT NOT NULL DEFAULT '{}'
+            );
             """
         )

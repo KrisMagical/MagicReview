@@ -141,6 +141,22 @@ Run only selected agents:
 }
 ```
 
+Enable a real LLM provider with explicit network policy:
+
+```json
+{
+  "path": ".",
+  "enable_llm": true,
+  "llm_provider": "openai",
+  "network_policy": {
+    "enabled": true,
+    "allow_llm": true,
+    "code_sharing_mode": "summary_only",
+    "allowed_providers": ["openai"]
+  }
+}
+```
+
 ## Troubleshooting
 
 - If `mcp` is missing, install dependencies from `app/requirements.txt`.
@@ -150,3 +166,4 @@ Run only selected agents:
 - LLM architecture review is disabled by default. When enabled, ReviewAgent sends a bounded project summary to the configured provider.
 - Enterprise rules are enabled by default for `review_project`; when no config is found, behavior is unchanged.
 - Multi-agent review is disabled by default and runs synchronously when `enable_agents` is true.
+- MCP remains offline by default. Real LLM providers require `network_policy`.

@@ -21,6 +21,7 @@ class ReviewProjectInput(TypedDict, total=False):
     enable_enterprise_rules: bool
     enable_agents: bool
     agents: list[str]
+    network_policy: dict
 
 
 class ReviewDiffInput(TypedDict):

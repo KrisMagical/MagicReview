@@ -14,6 +14,7 @@ from app.parser import DiffParser, build_changed_source
 from app.project.scanner import ProjectScanner
 from app.reviewer.project_reviewer import ProjectReviewer
 from app.rules.engine import RuleEngine
+from reviewagent.connected import NetworkPolicy
 
 
 class ReviewService:
@@ -126,6 +127,7 @@ class ReviewService:
         enable_enterprise_rules: bool = True,
         enable_agents: bool = False,
         agents: list[str] | None = None,
+        network_policy: NetworkPolicy | dict[str, Any] | None = None,
     ) -> dict[str, list[dict[str, Any]]]:
         """Review a project directory with Phase 1 and Phase 2 analyzers."""
 
@@ -149,6 +151,7 @@ class ReviewService:
                         )
                     ]
                 )
+            active_policy = network_policy if isinstance(network_policy, NetworkPolicy) else NetworkPolicy.from_dict(network_policy)
             if enable_agents:
                 context = self.coordinator.build_context(
                     project_path,
@@ -156,6 +159,7 @@ class ReviewService:
                     llm_provider=llm_provider,
                     config_path=config_path,
                     enable_enterprise_rules=enable_enterprise_rules,
+                    network_policy=active_policy,
                 )
                 return self.coordinator.review_project(project_path, context=context, selected_agents=agents)
             issues = self.project_reviewer.review(project_path)
@@ -165,7 +169,13 @@ class ReviewService:
                 if config.has_rules:
                     issues.extend(EnterpriseRuleEngine(config).run_project(project_path, files))
             if enable_llm:
-                reviewer = self.architecture_reviewer or ArchitectureReviewer(provider=provider_from_env(llm_provider))
+                reviewer = self.architecture_reviewer or ArchitectureReviewer(
+                    provider=provider_from_env(llm_provider),
+                    network_policy=active_policy,
+                    audit_source="cli",
+                    project_name=project_path.name,
+                    target_ref=str(project_path),
+                )
                 issues.extend(reviewer.review_project(project_path, static_issues=issues))
             return self._report(self._dedupe_and_sort(issues))
         except Exception as exc:

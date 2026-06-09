@@ -58,6 +58,7 @@ from app.rules.architecture import GodObjectDetector
 from app.rules.base import Issue
 from app.rules.engine import RuleEngine
 from reviewagent.storage import ReviewPersistenceService, init_db
+from reviewagent.connected import NetworkPolicy
 
 
 WORKSPACE_ROOT = Path(os.getcwd()).resolve()
@@ -347,7 +348,13 @@ def build_cli_parser() -> argparse.ArgumentParser:
     project_parser.add_argument("--config", help="Enterprise rule YAML or JSON config path.")
     project_parser.add_argument("--no-enterprise", action="store_true", help="Disable enterprise rule loading.")
     project_parser.add_argument("--llm", action="store_true", help="Enable optional LLM architecture review.")
-    project_parser.add_argument("--llm-provider", choices=("none", "mock", "openai"), default=None, help="LLM provider for architecture review.")
+    project_parser.add_argument("--llm-provider", choices=("none", "mock", "openai", "anthropic", "azure_openai"), default=None, help="LLM provider for architecture review.")
+    project_parser.add_argument("--allow-network", action="store_true", help="Allow explicitly approved network operations.")
+    project_parser.add_argument("--allow-llm", action="store_true", help="Allow network LLM providers when --allow-network is also set.")
+    project_parser.add_argument("--allow-github", action="store_true", help="Allow GitHub API operations for connected workflows.")
+    project_parser.add_argument("--code-sharing", choices=("summary-only", "snippets", "full-context"), default="none", help="Maximum code sharing mode for connected providers.")
+    project_parser.add_argument("--confirm-network", action="store_true", help="Confirm that connected services may run under the selected policy.")
+    project_parser.add_argument("--audit-network", action="store_true", default=True, help="Record network audit events.")
     project_parser.add_argument(
         "--agents",
         nargs="?",
@@ -393,6 +400,7 @@ def main() -> None:
                 enable_enterprise_rules=not args.no_enterprise,
                 enable_agents=args.agents is not None,
                 agents=selected_agents,
+                network_policy=_network_policy_from_args(args),
             )
             if args.save:
                 _save_review_result(result, source="cli", target_type="project", target_ref=args.target, project_name=Path(args.target).name or args.target)
@@ -448,6 +456,21 @@ def _parse_agents(raw_agents: str | None) -> list[str] | None:
     if raw_agents in (None, "all"):
         return None
     return [item.strip() for item in raw_agents.split(",") if item.strip()]
+
+
+def _network_policy_from_args(args: Any) -> NetworkPolicy:
+    provider = getattr(args, "llm_provider", None)
+    allowed = [provider] if provider and provider not in {"none", "mock"} else []
+    return NetworkPolicy(
+        enabled=bool(getattr(args, "allow_network", False)),
+        allow_llm=bool(getattr(args, "allow_llm", False)),
+        allow_github_api=bool(getattr(args, "allow_github", False)),
+        allow_remote_mcp=False,
+        code_sharing_mode=str(getattr(args, "code_sharing", "none")).replace("-", "_"),  # type: ignore[arg-type]
+        allowed_providers=allowed,
+        require_explicit_consent=True,
+        audit_enabled=bool(getattr(args, "audit_network", True)),
+    )
 
 
 def _save_review_result(

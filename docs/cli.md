@@ -62,6 +62,15 @@ review project examples/multi_agent_project --agents quality,security
 review project examples/multi_agent_project --agents --save
 ```
 
+Connected LLM providers require explicit network authorization:
+
+```bash
+review project . --llm --llm-provider openai --allow-network --allow-llm --code-sharing summary-only
+review project . --llm --llm-provider anthropic --allow-network --allow-llm --code-sharing summary-only
+```
+
+`--llm` by itself does not grant permission to call external providers.
+
 ## Output Formats
 
 Supported values:

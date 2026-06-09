@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from app.architecture.context_builder import ArchitectureContextBuilder
 from app.models.issue import Issue
 from app.llm.provider import LLMProvider, LLMProviderError, provider_from_env
+from reviewagent.connected import NetworkPolicy
+from reviewagent.storage import ReviewPersistenceService
 
 
 class ArchitectureReviewer:
@@ -24,19 +26,36 @@ class ArchitectureReviewer:
         context_builder: ArchitectureContextBuilder | None = None,
         *,
         max_issues: int = 50,
+        network_policy: NetworkPolicy | None = None,
+        audit_source: str = "cli",
+        project_name: str | None = None,
+        target_ref: str | None = None,
     ) -> None:
         self.provider = provider or provider_from_env()
         self.context_builder = context_builder or ArchitectureContextBuilder()
         self.max_issues = max_issues
+        self.network_policy = network_policy or NetworkPolicy.offline()
+        self.audit_source = audit_source
+        self.project_name = project_name
+        self.target_ref = target_ref
 
     def review_project(self, project_root: str | Path, static_issues: list[Issue] | None = None) -> list[Issue]:
+        status = "success"
+        error_type = None
         try:
             context = self.context_builder.build(project_root, static_issues=static_issues or [])
             prompt = self.render_prompt(context.to_prompt_text(self.context_builder.max_context_chars))
-            raw = self.provider.complete(prompt)
+            try:
+                raw = self.provider.complete(prompt, policy=self.network_policy)
+            except TypeError:
+                raw = self.provider.complete(prompt)  # type: ignore[call-arg]
             return self._dedupe(self._parse_issues(raw, project_root))[: self.max_issues]
         except Exception as exc:
+            status = "failed"
+            error_type = type(exc).__name__
             return [self._error_issue(exc)]
+        finally:
+            self._audit(status=status, error_type=error_type)
 
     @staticmethod
     def render_prompt(context_text: str) -> str:
@@ -118,3 +137,23 @@ class ArchitectureReviewer:
             message="LLM architecture review failed or is not configured.",
             suggestion="Configure REVIEWAGENT_LLM_PROVIDER and API credentials, or run without --llm.",
         )
+
+    def _audit(self, *, status: str, error_type: str | None) -> None:
+        if not self.network_policy.audit_enabled:
+            return
+        if not self.network_policy.enabled and not getattr(self.provider, "requires_network", False):
+            return
+        try:
+            ReviewPersistenceService().save_network_audit(
+                source=self.audit_source,
+                provider=getattr(self.provider, "name", self.provider.__class__.__name__),
+                operation="llm_architecture_review",
+                code_sharing_mode=self.network_policy.code_sharing_mode,
+                project_name=self.project_name,
+                target_ref=self.target_ref,
+                status=status,
+                error_type=error_type,
+                metadata={"requires_network": getattr(self.provider, "requires_network", False)},
+            )
+        except Exception:
+            pass

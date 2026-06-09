@@ -90,6 +90,8 @@ REVIEWAGENT_DB_PATH=.reviewagent/reviewagent.db
 - `GET /api/stats/trends/technical-debt`
 - `GET /api/stats/trends/architecture-risk`
 - `GET /api/stats/team`
+- `GET /api/audit/network`
+- `GET /api/audit/network/{id}`
 
 ## Pages
 
@@ -97,6 +99,7 @@ REVIEWAGENT_DB_PATH=.reviewagent/reviewagent.db
 - `/projects`: project list
 - `/projects/{id}`: project detail
 - `/reviews/{id}`: review detail
+- `/audit/network`: connected-service audit events
 
 ## Security
 

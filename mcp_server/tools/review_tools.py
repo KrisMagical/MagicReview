@@ -87,6 +87,10 @@ REVIEW_PROJECT_TOOL = ToolSpec(
                 "items": {"type": "string"},
                 "description": "Optional agent subset, such as ['quality', 'security'].",
             },
+            "network_policy": {
+                "type": "object",
+                "description": "Optional connected-services NetworkPolicy. Defaults to offline.",
+            },
         },
         "required": ["path"],
         "additionalProperties": False,
@@ -142,6 +146,9 @@ async def review_project(arguments: dict[str, Any]) -> str:
     agents = arguments.get("agents")
     if agents is not None and not (isinstance(agents, list) and all(isinstance(agent, str) for agent in agents)):
         raise ValueError("Argument `agents` must be a list of strings when provided.")
+    network_policy = arguments.get("network_policy")
+    if network_policy is not None and not isinstance(network_policy, dict):
+        raise ValueError("Argument `network_policy` must be an object when provided.")
     return await _run_engine(
         lambda: json.dumps(
             service_tools.review_project(
@@ -152,6 +159,7 @@ async def review_project(arguments: dict[str, Any]) -> str:
                 enable_enterprise_rules=enable_enterprise_rules,
                 enable_agents=enable_agents,
                 agents=agents,
+                network_policy=network_policy,
             ),
             ensure_ascii=False,
             indent=2,

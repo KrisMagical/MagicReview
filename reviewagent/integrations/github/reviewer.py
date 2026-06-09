@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from typing import Any
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from app.report.cli_formatters import has_fail_on_issue
 from app.reviewer import ReviewService
 from reviewagent.storage import ReviewPersistenceService
+from reviewagent.connected import NetworkPolicy
 from reviewagent.integrations.github.client import GitHubAppClient
 from reviewagent.integrations.github.commenter import GitHubCommenter
 from reviewagent.integrations.github.config import GitHubAppConfig
@@ -38,7 +41,10 @@ class GitHubPullRequestReviewer:
         except Exception as exc:
             return GitHubReviewResult(status="failed", errors=[f"GitHub API error: {exc}"])
         try:
-            result = self.review_service.review_diff(diff_text)
+            if self.config.review_mode == "full_project":
+                result = self._review_full_project(event)
+            else:
+                result = self.review_service.review_diff(diff_text)
         except Exception as exc:
             result = {"issues": []}
             errors.append(f"ReviewService failed: {exc}")
@@ -85,3 +91,43 @@ class GitHubPullRequestReviewer:
     def from_config(config: GitHubAppConfig) -> "GitHubPullRequestReviewer":
         client = GitHubAppClient(app_id=config.app_id, private_key=config.private_key)
         return GitHubPullRequestReviewer(client=client, config=config)
+
+    def _review_full_project(self, event: PullRequestEvent) -> dict[str, Any]:
+        with TemporaryDirectory(prefix="reviewagent-pr-") as temp_dir:
+            root = Path(temp_dir)
+            for item in self.client.list_pull_request_files(event.owner, event.repo, event.pull_number):
+                filename = str(item.get("filename", ""))
+                if not filename.endswith(".py"):
+                    continue
+                content = item.get("content")
+                if content is None and item.get("raw_url"):
+                    content = self.client.get_url_text(str(item["raw_url"]))
+                if content is None and item.get("patch"):
+                    content = self._content_from_patch(str(item["patch"]))
+                if content is None:
+                    continue
+                target = root / filename
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(str(content), encoding="utf-8")
+            return self.review_service.review_project(
+                str(root),
+                enable_llm=self.config.enable_llm,
+                config_path=self.config.config_path,
+                enable_agents=self.config.enable_agents,
+                network_policy=NetworkPolicy(
+                    enabled=False,
+                    allow_llm=False,
+                    allow_github_api=True,
+                    code_sharing_mode="none",
+                ),
+            )
+
+    @staticmethod
+    def _content_from_patch(patch: str) -> str:
+        lines = []
+        for line in patch.splitlines():
+            if line.startswith("+") and not line.startswith("+++"):
+                lines.append(line[1:])
+            elif line.startswith(" ") and not line.startswith("@@"):
+                lines.append(line[1:])
+        return "\n".join(lines) + ("\n" if lines else "")

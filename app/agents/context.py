@@ -8,6 +8,7 @@ from typing import Any
 
 from app.enterprise import EnterpriseRuleConfig
 from app.models.issue import Issue
+from reviewagent.connected import NetworkPolicy
 
 
 @dataclass
@@ -26,6 +27,7 @@ class AgentContext:
     enable_llm: bool = False
     config_path: str | None = None
     enable_enterprise_rules: bool = True
+    network_policy: NetworkPolicy = field(default_factory=NetworkPolicy.offline)
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

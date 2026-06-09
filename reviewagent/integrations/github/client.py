@@ -62,6 +62,19 @@ class GitHubAppClient:
         self._raise_for_status(response)
         return response.text
 
+    def list_pull_request_files(self, owner: str, repo: str, pull_number: int) -> list[dict[str, Any]]:
+        response = self.http.get(
+            f"{self.api_url}/repos/{owner}/{repo}/pulls/{pull_number}/files",
+            headers=self._headers(),
+        )
+        self._raise_for_status(response)
+        return list(response.json())
+
+    def get_url_text(self, url: str) -> str:
+        response = self.http.get(url, headers=self._headers(accept="text/plain"))
+        self._raise_for_status(response)
+        return response.text
+
     def list_issue_comments(self, owner: str, repo: str, pull_number: int) -> list[dict[str, Any]]:
         response = self.http.get(
             f"{self.api_url}/repos/{owner}/{repo}/issues/{pull_number}/comments",

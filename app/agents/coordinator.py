@@ -16,6 +16,7 @@ from app.agents.security_agent import SecurityAgent
 from app.agents.utils import dedupe_and_sort
 from app.models.issue import Issue
 from app.project.scanner import ProjectScanner
+from reviewagent.connected import NetworkPolicy
 
 
 DEFAULT_AGENT_ORDER = ("knowledge", "quality", "bug", "security", "architecture", "refactor")
@@ -52,6 +53,7 @@ class ReviewCoordinator:
         llm_provider: str | None = None,
         config_path: str | None = None,
         enable_enterprise_rules: bool = True,
+        network_policy: NetworkPolicy | None = None,
     ) -> AgentContext:
         root = Path(project_root).resolve()
         return AgentContext(
@@ -61,6 +63,7 @@ class ReviewCoordinator:
             llm_provider=llm_provider,
             config_path=config_path,
             enable_enterprise_rules=enable_enterprise_rules,
+            network_policy=network_policy or NetworkPolicy.offline(),
         )
 
     def run_agents(self, context: AgentContext, *, selected_agents: list[str] | None = None) -> list[AgentResult]:
